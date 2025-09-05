@@ -30,8 +30,82 @@ Eagle Eye Analytics is a software for schools that want to improve at their golf
 - Create assignemnts directly in the website
 - Video links, messages, etc.
 
-## Links
+## Installation
 
-- [Getting Started](docs/installation.md)
-- [Usage](docs/usage.md)
-- [Documentation](docs/documentation.md)
+Step 1: Clone the GitHub repository
+
+Step 2: Run firebase login and login with a Google Account that has access to either / both the test database and the production database.
+
+```sh
+firebase login
+```
+
+Step 3: Cd into the function folder and install node_modules
+
+```sh
+cd functions
+npm install
+```
+
+## Usage
+
+### Note: All these commands are run from the root folder
+
+To run on an emulator locally (super safe, super fast)
+
+```sh
+firebase emulators:start
+```
+
+To run on an emulator and save the data
+
+```sh
+firebase emulators:start --import=./saved-data --export-on-exit
+```
+
+Test project directly on EagleEyeAnalyticsTest
+
+```sh
+firebase use test
+firebase deploy --only functions
+```
+
+Deploy product to production on EagleEyeAnalytics
+
+```sh
+firebase use prod
+firebase deploy --only functions
+```
+
+## Documentation
+
+### Notes
+
+- ${DATABASE_KEY} represents the environment variable REACT_APP_DATABASE_KEY, so replace that part (including the dollar sign and curly braces) of it with the environment variable
+- Practically all the functions require a firebase auth token, make sure you replace the ${token} in each bearer token with the actual token
+
+### Example
+
+```javascript
+const url = `https://creategame-${DATABASE_KEY}-uc.a.run.app/`;
+const gameData = {
+  createdDate: new Date().getTime() / 1000,
+  title: "First Game",
+  holes: [],
+  gameDate: new Date().getTime() / 1000,
+};
+
+const res = await fetch(url, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${token}`,
+  },
+  body: JSON.stringify(gameData),
+});
+```
+
+### Links
+
+- [User Functions](user_functions.md)
+- [Game Functions](game_functions.md)
