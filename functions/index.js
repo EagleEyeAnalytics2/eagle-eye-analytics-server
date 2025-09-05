@@ -19,6 +19,7 @@ import {
   deleteGame as deleteGameFunction,
   updateGame as updateGameFunction,
 } from "./game_functions.js";
+import { createClass as createClassFunction } from "./class_functions.js";
 
 export const createUser = createUserFunction;
 export const fetchUserData = fetchUserDataFunction;
@@ -29,6 +30,8 @@ export const createGame = createGameFunction;
 export const fetchGame = fetchGameFunction;
 export const deleteGame = deleteGameFunction;
 export const updateGame = updateGameFunction;
+
+export const createClass = createClassFunction;
 
 export const verifyId = onRequest((req, res) => {
   withVerifiedId(req, res, async () => {

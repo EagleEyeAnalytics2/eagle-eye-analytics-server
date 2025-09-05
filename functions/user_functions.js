@@ -18,9 +18,9 @@ export const createUser = onRequest((req, res) => {
     if (isCoach === undefined) missingFields.push("Is Coach");
 
     if (missingFields.length > 0) {
-      return res
-        .status(400)
-        .send("Missing required fields: " + missingFields.join(", "));
+      return res.status(400).json({
+        error: "Missing required fields: " + missingFields.join(", "),
+      });
     }
 
     const invalidTypes = [];
@@ -31,53 +31,67 @@ export const createUser = onRequest((req, res) => {
     if (typeof isCoach !== "boolean") invalidTypes.push("Is Coach");
 
     if (invalidTypes.length > 0) {
-      return res
-        .status(400)
-        .send("Invalid types for fields: " + invalidTypes.join(", "));
+      return res.status(400).json({
+        error: "Invalid types for fields: " + invalidTypes.join(", "),
+      });
     }
 
     email = email.trim().toLowerCase();
     if (!isValidEmail(email)) {
-      return res.status(400).send("Invalid email format.");
+      return res.status(400).json({ error: "Invalid email format." });
     }
 
     try {
       const existingUser = await admin.auth().getUserByEmail(email);
       if (existingUser) {
-        return res.status(400).send("Email already exists.");
+        return res.status(400).json({ error: "Email already exists." });
       }
     } catch (error) {
       if (error.code !== "auth/user-not-found") {
-        return res.status(500).send("Error checking email existence.");
+        return res
+          .status(500)
+          .json({ error: "Error checking email existence." });
       }
     }
 
     if (password.length < 6) {
-      return res.status(400).send("Password must be at least 6 characters.");
+      return res
+        .status(400)
+        .json({ error: "Password must be at least 6 characters." });
     }
 
     const passwordRegex = /^[A-Za-z0-9!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+$/;
     if (!passwordRegex.test(password)) {
-      return res.status(400).send("Password contains invalid characters.");
+      return res
+        .status(400)
+        .json({ error: "Password contains invalid characters." });
     }
 
     firstName = firstName.trim();
     lastName = lastName.trim();
 
     if (firstName.length < 1) {
-      return res.status(400).send("First Name must be at least 1 character.");
+      return res
+        .status(400)
+        .json({ error: "First Name must be at least 1 character." });
     }
 
     if (lastName.length < 1) {
-      return res.status(400).send("Last Name must be at least 1 character.");
+      return res
+        .status(400)
+        .json({ error: "Last Name must be at least 1 character." });
     }
 
     const nameRegex = /^[A-Za-z]+$/;
     if (!nameRegex.test(firstName)) {
-      return res.status(400).send("First Name must contain only letters.");
+      return res
+        .status(400)
+        .json({ error: "First Name must contain only letters." });
     }
     if (!nameRegex.test(lastName)) {
-      return res.status(400).send("Last Name must contain only letters.");
+      return res
+        .status(400)
+        .json({ error: "Last Name must contain only letters." });
     }
 
     firstName = firstName.charAt(0).toUpperCase() + firstName.slice(1);
@@ -106,9 +120,10 @@ export const createUser = onRequest((req, res) => {
           joined: new Date().getTime() / 1000,
         });
 
-      res.status(201).send("User created successfully.");
+      res.status(201).json({ message: "User created successfully." });
     } catch (error) {
-      res.status(500).send(`Error creating user. ${error.message}`);
+      console.error("Error creating user:", error.message);
+      res.status(500).json({ error: "Error creating user." });
     }
   });
 });
@@ -124,7 +139,7 @@ export const fetchUserData = onRequest((req, res) => {
         if (!userDoc.exists) {
           userDoc = await db.collection("coaches").doc(uid).get();
           if (!userDoc.exists) {
-            return res.status(404).send("User not found.");
+            return res.status(404).json({ error: "User not found." });
           }
           isCoach = true;
         }
@@ -133,7 +148,8 @@ export const fetchUserData = onRequest((req, res) => {
         userData.isCoach = isCoach;
         res.status(200).json(userData);
       } catch (error) {
-        res.status(500).send(`Error fetching user data. ${error.message}`);
+        console.error("Error fetching user data:", error.message);
+        res.status(500).json({ error: "Error fetching user data." });
       }
     });
   });
@@ -147,9 +163,10 @@ export const deleteUser = onRequest((req, res) => {
         await admin.auth().deleteUser(uid);
         await db.collection("users").doc(uid).delete();
         await db.collection("coaches").doc(uid).delete();
-        res.status(200).send("User deleted successfully.");
+        res.status(200).json({ message: "User deleted successfully." });
       } catch (error) {
-        res.status(500).send(`Error deleting user. ${error.message}`);
+        console.error("Error deleting user:", error.message);
+        res.status(500).json({ error: "Error deleting user." });
       }
     });
   });

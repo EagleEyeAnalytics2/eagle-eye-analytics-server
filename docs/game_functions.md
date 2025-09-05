@@ -51,9 +51,9 @@ headers: {
 
 ### Returns
 
-- `201`: `Game create successfully`
-- `400`: Error containing invalid game status
-- `500`: `Error creating game: ${error.message}`
+- `201`: message: `Game create successfully`
+- `400`: error: Error containing invalid game status
+- `500`: error: `Error creating game`
 
 ## Fetch Game
 
@@ -80,9 +80,9 @@ headers: {
 ### Returns
 
 - `200`: json of the game
-- `400`: `Missing gameId parameter`
-- `404`: `Game not found`
-- `500`: `Error fetching game: ${error.message}`
+- `400`: error: `Missing gameId parameter`
+- `404`: error: `Game not found`
+- `500`: error: `Error fetching game`
 
 ## Delete Game
 
@@ -111,7 +111,7 @@ headers: {
 - `200`: `Game deleted successfully`
 - `400`: `Missing gameId parameter`
 - `404`: `Game not found`
-- `500`: `Error deleting game: ${error.message}`
+- `500`: `Error deleting game`
 
 ## Update Game
 
@@ -140,7 +140,7 @@ See [Create Game Body](#body) for details on the required fields and structure.
 
 ### Returns
 
-- `200`: `Game updated successfully`
-- `400`: Error containing invalid game status
-- `404`: `Game not found`
-- `500`: `Error updating game: ${error.message}`
+- `200`: message: `Game updated successfully`
+- `400`: error: Error containing invalid game status
+- `404`: error: `Game not found`
+- `500`: error: `Error updating game`

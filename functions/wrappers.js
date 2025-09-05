@@ -14,7 +14,7 @@ export const handleCors = (req, res, handler) => {
   setCorsHeaders(res);
 
   if (req.method === "OPTIONS") {
-    res.status(204).send("");
+    res.status(204).json({});
     return;
   }
 
@@ -24,7 +24,7 @@ export const handleCors = (req, res, handler) => {
 export const withVerifiedId = async (req, res, handler) => {
   const idToken = req.headers.authorization?.split("Bearer ")[1];
   if (!idToken) {
-    res.status(401).send("Unauthorized: No Id Token");
+    res.status(401).json({ error: "Unauthorized: No Id Token" });
     return;
   }
 
@@ -34,25 +34,25 @@ export const withVerifiedId = async (req, res, handler) => {
     return handler(req, res);
   } catch (error) {
     console.log(error);
-    res.status(401).send("Unauthorized: Invalid Id Token");
+    res.status(401).json({ error: "Unauthorized: Invalid Id Token" });
   }
 };
 
 export const withVerifiedEmail = async (req, res, handler) => {
   const idToken = req.headers.authorization?.split("Bearer ")[1];
   if (!idToken) {
-    res.status(401).send("Unauthorized: No Id Token");
+    res.status(401).json({ error: "Unauthorized: No Id Token" });
     return;
   }
   try {
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     req.user = decodedToken;
     if (!req.user.email_verified) {
-      res.status(403).send("Email not verified");
+      res.status(403).json({ error: "Email not verified" });
       return;
     }
     return handler(req, res);
   } catch (error) {
-    res.status(401).send("Unauthorized: Invalid Id Token");
+    res.status(401).json({ error: "Unauthorized: Invalid Id Token" });
   }
 };

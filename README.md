@@ -107,5 +107,6 @@ const res = await fetch(url, {
 
 ### Links
 
-- [User Functions](user_functions.md)
-- [Game Functions](game_functions.md)
+- [User Functions](docs/user_functions.md)
+- [Game Functions](docs/game_functions.md)
+- [Class Functions](docs/class_functions.md)

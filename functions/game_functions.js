@@ -144,7 +144,7 @@ export const createGame = onRequest((req, res) => {
       }
 
       if (validateGame(gameData)) {
-        res.status(400).send(validateGame(gameData));
+        res.status(400).json({ error: validateGame(gameData) });
         return;
       }
 
@@ -153,9 +153,10 @@ export const createGame = onRequest((req, res) => {
         await gameRef.set({
           ...gameData,
         });
-        res.status(201).send("Game created successfully");
+        res.status(201).json({ message: "Game created successfully" });
       } catch (error) {
-        res.status(500).send(`Error creating game: ${error.message}`);
+        console.error("Error creating game:", error.message);
+        res.status(500).json({ error: "Error creating game." });
       }
     });
   });
@@ -167,7 +168,7 @@ export const fetchGameStats = onRequest((req, res) => {
       const uid = req.user.uid;
       const mode = req.query.mode;
       if (!mode) {
-        res.status(400).send("Missing mode parameter");
+        res.status(400).json({ error: "Missing mode parameter" });
         return;
       }
 
@@ -182,8 +183,8 @@ export const fetchGameStats = onRequest((req, res) => {
           }));
           res.status(200).json(games);
         } catch (error) {
-          console.error("Error fetching games:", error);
-          res.status(500).send("Error fetching games");
+          console.error("Error fetching games:", error.message);
+          res.status(500).json({ error: "Error fetching games" });
         }
       }
     });
@@ -196,7 +197,7 @@ export const fetchGame = onRequest((req, res) => {
       const uid = req.user.uid;
       const gameId = req.query.gameId;
       if (!gameId) {
-        res.status(400).send("Missing gameId parameter");
+        res.status(400).json({ error: "Missing gameId parameter" });
         return;
       }
 
@@ -206,12 +207,13 @@ export const fetchGame = onRequest((req, res) => {
           .doc(gameId)
           .get();
         if (!gameDoc.exists) {
-          res.status(404).send("Game not found");
+          res.status(404).json({ error: "Game not found" });
           return;
         }
         res.status(200).json({ id: gameDoc.id, ...gameDoc.data() });
       } catch (error) {
-        res.status(500).send(`Error fetching game: ${error.message}`);
+        console.error("Error fetching game:", error.message);
+        res.status(500).json({ error: "Error fetching game." });
       }
     });
   });
@@ -223,7 +225,7 @@ export const deleteGame = onRequest((req, res) => {
       const uid = req.user.uid;
       const gameId = req.query.gameId;
       if (!gameId) {
-        res.status(400).send("Missing gameId parameter");
+        res.status(400).json({ error: "Missing gameId parameter" });
         return;
       }
 
@@ -233,14 +235,15 @@ export const deleteGame = onRequest((req, res) => {
           .doc(gameId)
           .get();
         if (!gameDoc.exists) {
-          res.status(404).send("Game not found");
+          res.status(404).json({ error: "Game not found" });
           return;
         }
 
         await gameDoc.ref.delete();
-        res.status(200).send("Game deleted successfully");
+        res.status(200).json({ message: "Game deleted successfully" });
       } catch (error) {
-        res.status(500).send(`Error deleting game: ${error.message}`);
+        console.error("Error deleting game:", error.message);
+        res.status(500).json({ error: "Error deleting game." });
       }
     });
   });
@@ -252,7 +255,7 @@ export const updateGame = onRequest((req, res) => {
       const uid = req.user.uid;
       const gameId = req.query.gameId;
       if (!gameId) {
-        res.status(400).send("Missing gameId parameter");
+        res.status(400).json({ error: "Missing gameId parameter" });
         return;
       }
 
@@ -262,19 +265,20 @@ export const updateGame = onRequest((req, res) => {
           .doc(gameId)
           .get();
         if (!gameDoc.exists) {
-          res.status(404).send("Game not found");
+          res.status(404).json({ error: "Game not found" });
           return;
         }
 
         const updatedData = req.body;
         if (validateGame(updatedData)) {
-          res.status(400).send(validateGame(updatedData));
+          res.status(400).json({ error: validateGame(updatedData) });
           return;
         }
         await gameDoc.ref.update(updatedData);
-        res.status(200).send("Game updated successfully");
+        res.status(200).json({ message: "Game updated successfully" });
       } catch (error) {
-        res.status(500).send(`Error updating game: ${error.message}`);
+        console.error("Error updating game:", error.message);
+        res.status(500).json({ error: "Error updating game." });
       }
     });
   });

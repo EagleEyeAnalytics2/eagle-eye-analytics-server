@@ -37,9 +37,9 @@ HTTPS Request Type: `POST`
 
 ### Returns
 
-- `201`: `User created successfully.`
-- `400`: Parameter error
-- `500`: `Error creating user. ${error.message}`
+- `201`: message: `User created successfully.`
+- `400`: error: Parameter error
+- `500`: error: `Error creating user.`
 
 ## Fetch User Data
 
@@ -72,8 +72,8 @@ HTTPS Request Type: `GET`
   - `joined`: `number`
     - Unix Epoch Time in Seconds
 
-- `404`: `User not found.`
-- `500`: `Error fetching user data. ${error.message}`
+- `404`: error: `User not found.`
+- `500`: error: `Error fetching user data.`
 
 ## Delete User
 
@@ -95,5 +95,5 @@ HTTPS Request Type: `DELETE`
 
 ### Returns
 
-- `200`: `User deleted successfully`
-- `500`: `Error deleting user. ${error.message}`
+- `200`: message: `User deleted successfully`
+- `500`: error: `Error deleting user.`
