@@ -108,10 +108,10 @@ headers: {
 
 ### Returns
 
-- `200`: `Game deleted successfully`
-- `400`: `Missing gameId parameter`
-- `404`: `Game not found`
-- `500`: `Error deleting game`
+- `200`: message: `Game deleted successfully`
+- `400`: error: `Missing gameId parameter`
+- `404`: error: `Game not found`
+- `500`: error: `Error deleting game`
 
 ## Update Game
 
