@@ -23,7 +23,7 @@
       "port": 5001
     },
     "firestore": {
-      "port": 8000
+      "port": 7999
     },
     "ui": {
       "enabled": true

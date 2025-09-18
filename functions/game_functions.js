@@ -133,22 +133,22 @@ const createRandomGame = (numHoles) => {
 export const createGame = onRequest((req, res) => {
   return handleCors(req, res, async (req, res) => {
     return withVerifiedId(req, res, async (req, res) => {
-      const uid = req.user.uid;
-      let gameData = null;
-      if (req.query.random18 && req.query.random18 === "true") {
-        gameData = createRandomGame(18);
-      } else if (req.query.random9 && req.query.random9 === "true") {
-        gameData = createRandomGame(9);
-      } else {
-        gameData = req.body;
-      }
-
-      if (validateGame(gameData)) {
-        res.status(400).json({ error: validateGame(gameData) });
-        return;
-      }
-
       try {
+        const uid = req.user.uid;
+        let gameData = null;
+        if (req.query.random18 && req.query.random18 === "true") {
+          gameData = createRandomGame(18);
+        } else if (req.query.random9 && req.query.random9 === "true") {
+          gameData = createRandomGame(9);
+        } else {
+          gameData = req.body;
+        }
+
+        if (validateGame(gameData)) {
+          res.status(400).json({ error: validateGame(gameData) });
+          return;
+        }
+
         const gameRef = db.collection(`users/${uid}/games`).doc();
         await gameRef.set({
           ...gameData,
@@ -194,14 +194,14 @@ export const fetchGameStats = onRequest((req, res) => {
 export const fetchGame = onRequest((req, res) => {
   return handleCors(req, res, async (req, res) => {
     return withVerifiedEmail(req, res, async (req, res) => {
-      const uid = req.user.uid;
-      const gameId = req.query.gameId;
-      if (!gameId) {
-        res.status(400).json({ error: "Missing gameId parameter" });
-        return;
-      }
-
       try {
+        const uid = req.user.uid;
+        const gameId = req.query.gameId;
+        if (!gameId) {
+          res.status(400).json({ error: "Missing gameId parameter" });
+          return;
+        }
+
         const gameDoc = await db
           .collection(`users/${uid}/games`)
           .doc(gameId)
@@ -222,14 +222,14 @@ export const fetchGame = onRequest((req, res) => {
 export const deleteGame = onRequest((req, res) => {
   return handleCors(req, res, async (req, res) => {
     return withVerifiedEmail(req, res, async (req, res) => {
-      const uid = req.user.uid;
-      const gameId = req.query.gameId;
-      if (!gameId) {
-        res.status(400).json({ error: "Missing gameId parameter" });
-        return;
-      }
-
       try {
+        const uid = req.user.uid;
+        const gameId = req.query.gameId;
+        if (!gameId) {
+          res.status(400).json({ error: "Missing gameId parameter" });
+          return;
+        }
+
         const gameDoc = await db
           .collection(`users/${uid}/games`)
           .doc(gameId)
@@ -252,14 +252,14 @@ export const deleteGame = onRequest((req, res) => {
 export const updateGame = onRequest((req, res) => {
   return handleCors(req, res, async (req, res) => {
     return withVerifiedEmail(req, res, async (req, res) => {
-      const uid = req.user.uid;
-      const gameId = req.query.gameId;
-      if (!gameId) {
-        res.status(400).json({ error: "Missing gameId parameter" });
-        return;
-      }
-
       try {
+        const uid = req.user.uid;
+        const gameId = req.query.gameId;
+        if (!gameId) {
+          res.status(400).json({ error: "Missing gameId parameter" });
+          return;
+        }
+
         const gameDoc = await db
           .collection(`users/${uid}/games`)
           .doc(gameId)

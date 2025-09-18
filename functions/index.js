@@ -23,6 +23,9 @@ import {
   createClass as createClassFunction,
   fetchCoachClasses as fetchCoachClassesFunction,
   deleteClass as deleteClassFunction,
+  createClassRequest as createClassRequestFunction,
+  fetchPendingClassRequests as fetchPendingClassRequestsFunction,
+  deleteClassRequest as deleteClassRequestFunction,
 } from "./class_functions.js";
 
 export const createUser = createUserFunction;
@@ -38,6 +41,9 @@ export const updateGame = updateGameFunction;
 export const createClass = createClassFunction;
 export const fetchCoachClasses = fetchCoachClassesFunction;
 export const deleteClass = deleteClassFunction;
+export const createClassRequest = createClassRequestFunction;
+export const fetchPendingClassRequests = fetchPendingClassRequestsFunction;
+export const deleteClassRequest = deleteClassRequestFunction;
 
 export const verifyId = onRequest((req, res) => {
   withVerifiedId(req, res, async () => {
