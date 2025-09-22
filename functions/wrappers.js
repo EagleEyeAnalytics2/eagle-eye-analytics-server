@@ -33,7 +33,6 @@ export const withVerifiedId = async (req, res, handler) => {
     req.user = decodedToken;
     return handler(req, res);
   } catch (error) {
-    console.log(error);
     res.status(401).json({ error: "Unauthorized: Invalid Id Token" });
   }
 };
