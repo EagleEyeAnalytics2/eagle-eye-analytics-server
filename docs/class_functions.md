@@ -170,3 +170,32 @@ headers: {
 - `403`: error: `User is not a student.`
 - `404`: error: `Class request not found.`
 - `500`: error: `Error deleting class request.`
+
+## Fetch Coach Class Requests
+
+Fetches all join requests for a specific class managed by the authenticated coach.
+
+Request: `https://coachfetchclassrequests-${DATABASE-KEY}-uc.a.run.app/`
+
+HTTPS Request Type: `GET`
+
+### Headers
+
+```json
+{
+  "Authorization": "Bearer ${token}"
+}
+```
+
+### Query Arguments
+
+- `classCode`: The unique identifier of the class whose join requests are to be fetched.
+
+### Returns
+
+- `200`: `{ requests: Array<Object> }` — Array of class request objects associated with the class.
+- `400`: `{ error: "Class code is required." }` — Returned if the `classCode` query parameter is missing.
+- `403`: `{ error: "User is not a coach." }` — Returned if the authenticated user is not a coach.
+- `403`: `{ error: "User is not the coach of this class." }` — Returned if the user does not own the class.
+- `404`: `{ error: "Class not found." }` — Returned if the class does not exist.
+- `500`: `{ error: "Error fetching class requests." }` — Returned if an internal server error occurs.

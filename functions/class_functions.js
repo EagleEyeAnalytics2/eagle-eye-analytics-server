@@ -277,3 +277,54 @@ export const deleteClassRequest = onRequest((req, res) => {
     });
   });
 });
+
+export const coachFetchClassRequests = onRequest((req, res) => {
+  return handleCors(req, res, async (req, res) => {
+    return withVerifiedEmail(req, res, async (req, res) => {
+      try {
+        const uid = req.user.uid;
+        const userRecord = await admin.auth().getUser(uid);
+        if (!userRecord.customClaims.isCoach) {
+          res.status(403).json({ error: "User is not a coach." });
+          return;
+        }
+
+        const classCode = req.query.classCode;
+
+        if (!classCode) {
+          res.status(400).json({ error: "Class code is required." });
+          return;
+        }
+
+        const classDoc = await db.collection("classes").doc(classCode).get();
+        if (!classDoc.exists) {
+          res.status(404).json({ error: "Class not found." });
+          return;
+        }
+
+        if (classDoc.data().coach !== uid) {
+          res
+            .status(403)
+            .json({ error: "User is not the coach of this class." });
+          return;
+        }
+
+        const requestsSnapshot = await db
+          .collection("classes")
+          .doc(classCode)
+          .collection("requests")
+          .get();
+
+        const requests = requestsSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+
+        res.status(200).json({ requests });
+      } catch (error) {
+        console.error("Error fetching class requests:", error.message);
+        res.status(500).json({ error: "Error fetching class requests." });
+      }
+    });
+  });
+});
