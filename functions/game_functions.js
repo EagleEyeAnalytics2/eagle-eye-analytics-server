@@ -1,5 +1,5 @@
 import { onRequest } from "firebase-functions/v2/https";
-import { db } from "./admin.js";
+import { admin, db } from "./admin.js";
 import { handleCors, withVerifiedEmail, withVerifiedId } from "./wrappers.js";
 import { clubs, teeShots, approachShots } from "./constants.js";
 
@@ -135,6 +135,12 @@ export const createGame = onRequest((req, res) => {
     return withVerifiedId(req, res, async (req, res) => {
       try {
         const uid = req.user.uid;
+        const userRecord = await admin.auth().getUser(uid);
+        if (userRecord.customClaims.isCoach) {
+          res.status(403).json({ error: "Coaches cannot create games." });
+          return;
+        }
+
         let gameData = null;
         if (req.query.random18 && req.query.random18 === "true") {
           gameData = createRandomGame(18);
@@ -166,6 +172,12 @@ export const fetchGameStats = onRequest((req, res) => {
   return handleCors(req, res, async (req, res) => {
     return withVerifiedEmail(req, res, async (req, res) => {
       const uid = req.user.uid;
+      const userRecord = await admin.auth().getUser(uid);
+      if (userRecord.customClaims.isCoach) {
+        res.status(403).json({ error: "Coaches cannot fetch games." });
+        return;
+      }
+
       const mode = req.query.mode;
       if (!mode) {
         res.status(400).json({ error: "Missing mode parameter" });
@@ -196,6 +208,12 @@ export const fetchGame = onRequest((req, res) => {
     return withVerifiedEmail(req, res, async (req, res) => {
       try {
         const uid = req.user.uid;
+        const userRecord = await admin.auth().getUser(uid);
+        if (userRecord.customClaims.isCoach) {
+          res.status(403).json({ error: "Coaches cannot fetch games." });
+          return;
+        }
+
         const gameId = req.query.gameId;
         if (!gameId) {
           res.status(400).json({ error: "Missing gameId parameter" });
@@ -224,6 +242,11 @@ export const deleteGame = onRequest((req, res) => {
     return withVerifiedEmail(req, res, async (req, res) => {
       try {
         const uid = req.user.uid;
+        const userRecord = await admin.auth().getUser(uid);
+        if (userRecord.customClaims.isCoach) {
+          res.status(403).json({ error: "Coaches cannot delete games." });
+          return;
+        }
         const gameId = req.query.gameId;
         if (!gameId) {
           res.status(400).json({ error: "Missing gameId parameter" });
@@ -254,6 +277,12 @@ export const updateGame = onRequest((req, res) => {
     return withVerifiedEmail(req, res, async (req, res) => {
       try {
         const uid = req.user.uid;
+        const userRecord = await admin.auth().getUser(uid);
+        if (userRecord.customClaims.isCoach) {
+          res.status(403).json({ error: "Coaches cannot update games." });
+          return;
+        }
+
         const gameId = req.query.gameId;
         if (!gameId) {
           res.status(400).json({ error: "Missing gameId parameter" });

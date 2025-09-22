@@ -52,6 +52,7 @@ headers: {
 ### Returns
 
 - `201`: message: `Game create successfully`
+- `403`: error: `Coaches cannot create games.`
 - `400`: error: Error containing invalid game status
 - `500`: error: `Error creating game`
 
@@ -81,37 +82,9 @@ headers: {
 
 - `200`: json of the game
 - `400`: error: `Missing gameId parameter`
+- `403`: error: `Coaches cannot fetch games.`
 - `404`: error: `Game not found`
 - `500`: error: `Error fetching game`
-
-## Delete Game
-
-Deletes a game based on an id
-
-Request: `https://deletegame-$[DATABASE-KEY}-uc.a.run.app/`
-
-HTTPS Request Type: `DELETE`
-
-### Header
-
-```json
-headers: {
-    "Authorization": "Bearer ${token}",
-},
-```
-
-### Body
-
-### Query Arguments
-
-- `gameId`: The id of the game you want to delete
-
-### Returns
-
-- `200`: message: `Game deleted successfully`
-- `400`: error: `Missing gameId parameter`
-- `404`: error: `Game not found`
-- `500`: error: `Error deleting game`
 
 ## Update Game
 
@@ -142,5 +115,36 @@ See [Create Game Body](#body) for details on the required fields and structure.
 
 - `200`: message: `Game updated successfully`
 - `400`: error: Error containing invalid game status
+- `403`: error: `Coaches cannot update games.`
 - `404`: error: `Game not found`
 - `500`: error: `Error updating game`
+
+## Delete Game
+
+Deletes a game based on an id
+
+Request: `https://deletegame-$[DATABASE-KEY}-uc.a.run.app/`
+
+HTTPS Request Type: `DELETE`
+
+### Header
+
+```json
+headers: {
+    "Authorization": "Bearer ${token}",
+},
+```
+
+### Body
+
+### Query Arguments
+
+- `gameId`: The id of the game you want to delete
+
+### Returns
+
+- `200`: message: `Game deleted successfully`
+- `400`: error: `Missing gameId parameter`
+- `403`: error: `Coaches cannot fetch games.`
+- `404`: error: `Game not found`
+- `500`: error: `Error deleting game`
