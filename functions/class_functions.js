@@ -328,3 +328,56 @@ export const coachFetchClassRequests = onRequest((req, res) => {
     });
   });
 });
+
+export const approveRequest = onRequest((req, res) => {
+  return handleCors(req, res, async (req, res) => {
+    return withVerifiedEmail(req, res, async (req, res) => {
+      try {
+        const uid = req.user.uid;
+        const userRecord = await admin.auth().getUser(uid);
+        if (!userRecord.customClaims.isCoach) {
+          res.status(403).json({ error: "User is not a coach." });
+          return;
+        }
+        const classCode = req.body.classCode;
+        const studentId = req.body.studentId;
+        if (!classCode || !studentId) {
+          res
+            .status(400)
+            .json({ error: "Class code and student ID are required." });
+          return;
+        }
+        const classRef = db.collection("classes").doc(classCode);
+        const classDoc = await classRef.get();
+        if (!classDoc.exists) {
+          res.status(404).json({ error: "Class not found." });
+          return;
+        }
+        if (classDoc.data().coach !== uid) {
+          res
+            .status(403)
+            .json({ error: "User is not the coach of this class." });
+          return;
+        }
+        if (classDoc.data().students.includes(studentId)) {
+          res.status(400).json({ error: "Student is already in the class." });
+          return;
+        }
+        const requestRef = classRef.collection("requests").doc(studentId);
+        const requestDoc = await requestRef.get();
+        if (!requestDoc.exists) {
+          res.status(404).json({ error: "Class request not found." });
+          return;
+        }
+        await requestRef.delete();
+        await classRef.update({
+          students: admin.firestore.FieldValue.arrayUnion(studentId),
+        });
+        res.status(200).json({ message: "Student added to class." });
+      } catch (error) {
+        console.error("Error approving class request:", error.message);
+        res.status(500).json({ error: "Error approving class request." });
+      }
+    });
+  });
+});

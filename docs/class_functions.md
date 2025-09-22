@@ -189,13 +189,48 @@ HTTPS Request Type: `GET`
 
 ### Query Arguments
 
-- `classCode`: The unique identifier of the class whose join requests are to be fetched.
+- `classCode`: The code of the class for the requests you want to fetch
 
 ### Returns
 
-- `200`: `{ requests: Array<Object> }` — Array of class request objects associated with the class.
-- `400`: `{ error: "Class code is required." }` — Returned if the `classCode` query parameter is missing.
-- `403`: `{ error: "User is not a coach." }` — Returned if the authenticated user is not a coach.
-- `403`: `{ error: "User is not the coach of this class." }` — Returned if the user does not own the class.
-- `404`: `{ error: "Class not found." }` — Returned if the class does not exist.
-- `500`: `{ error: "Error fetching class requests." }` — Returned if an internal server error occurs.
+- `200`: requests: array of class request objects associated with the class
+- `400`: error: `Class code is required.`
+- `403`: error: `User is not a coach.`
+- `403`: error: `User is not the coach of this class.`
+- `404`: error: `Class not found.`
+- `500`: error: `Error fetching class requests.`
+
+## Approve Class Request
+
+Approves a student's join request for a class (coach only)
+
+Request: `https://approverequest-${DATABASE-KEY}-uc.a.run.app/`
+
+HTTPS Request Type: `POST`
+
+### Header
+
+```json
+headers: {
+  "Content-Type": "application/json",
+  "Authorization": "Bearer ${token}",
+}
+```
+
+### Body
+
+- `classCode`: The code of the class
+- `studentId`: The UID of the student to approve
+
+### Query Arguments
+
+### Returns
+
+- `200`: message: `Student added to class.`
+- `400`: error: `Class code and student ID are required.`
+- `400`: error: `Student is already in the class.`
+- `403`: error: `User is not a coach.`
+- `403`: error: `User is not the coach of this class.`
+- `404`: error: `Class not found.`
+- `404`: error: `Class request not found.`
+- `500`: error: `Error approving class request.`
