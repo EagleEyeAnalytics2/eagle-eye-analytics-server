@@ -28,6 +28,7 @@ import {
   deleteClassRequest as deleteClassRequestFunction,
   coachFetchClassRequests as coachFetchClassRequestsFunction,
   approveRequest as approveRequestFunction,
+  coachRemoveStudentFromClass as coachRemoveStudentFromClassFunction,
 } from "./class_functions.js";
 
 export const createUser = createUserFunction;
@@ -48,6 +49,7 @@ export const fetchPendingClassRequests = fetchPendingClassRequestsFunction;
 export const deleteClassRequest = deleteClassRequestFunction;
 export const coachFetchClassRequests = coachFetchClassRequestsFunction;
 export const approveRequest = approveRequestFunction;
+export const coachRemoveStudentFromClass = coachRemoveStudentFromClassFunction;
 
 export const verifyId = onRequest((req, res) => {
   withVerifiedId(req, res, async () => {
@@ -76,12 +78,12 @@ export const updateClassToStudents = onDocumentUpdated(
 
     // Identify newly added students
     const addedStudentIds = afterStudents.filter(
-      (studentId) => !beforeStudents.includes(studentId)
+      (studentId) => !beforeStudents.includes(studentId),
     );
 
     // Itentify students that were removed
     const removedStudentIds = beforeStudents.filter(
-      (studentId) => !afterStudents.includes(studentId)
+      (studentId) => !afterStudents.includes(studentId),
     );
 
     // Add the class ID to each new student's 'classes' array
@@ -106,15 +108,15 @@ export const updateClassToStudents = onDocumentUpdated(
 
     if (addedStudentIds.length > 0)
       console.log(
-        `Added class ${classId} to students: ${addedStudentIds.join(", ")}`
+        `Added class ${classId} to students: ${addedStudentIds.join(", ")}`,
       );
     if (removedStudentIds.length > 0)
       console.log(
         `Removed class ${classId} from students: ${removedStudentIds.join(
-          ", "
-        )}`
+          ", ",
+        )}`,
       );
-  }
+  },
 );
 
 export const onUserDelete = functions.auth.user().onDelete(async (user) => {
@@ -133,7 +135,7 @@ export const onUserDelete = functions.auth.user().onDelete(async (user) => {
     await Promise.all(updates);
     await userRef.delete();
     console.log(
-      `Deleted user ${userId} and removed from classes: ${classIds.join(", ")}`
+      `Deleted user ${userId} and removed from classes: ${classIds.join(", ")}`,
     );
     return;
   }
@@ -173,7 +175,7 @@ export const removeStudentFromClass = onDocumentUpdated(
 
     // Identify classes that the student was removed from
     const removedClassIds = beforeClasses.filter(
-      (classId) => !afterClasses.includes(classId)
+      (classId) => !afterClasses.includes(classId),
     );
 
     // Remove the student ID from each removed class's 'students
@@ -193,10 +195,10 @@ export const removeStudentFromClass = onDocumentUpdated(
     await Promise.all(updates);
     if (removedClassIds.length > 0) {
       console.log(
-        `Removed student ${userId} from classes: ${removedClassIds.join(", ")}`
+        `Removed student ${userId} from classes: ${removedClassIds.join(", ")}`,
       );
     }
-  }
+  },
 );
 
 export const onClassDelete = onDocumentDeleted(
@@ -216,7 +218,7 @@ export const onClassDelete = onDocumentDeleted(
     });
     await Promise.all(updates);
     console.log(`Removed class ${classId} from students`);
-  }
+  },
 );
 
 export const fetchAssignments = onRequest((req, res) => {
@@ -250,7 +252,7 @@ export const fetchAssignments = onRequest((req, res) => {
             const assignmentData = assignmentDoc.data();
             if (assignmentData.students.includes(userId)) {
               assignments.push(
-                Object.assign({ id: assignmentDoc.id }, assignmentData)
+                Object.assign({ id: assignmentDoc.id }, assignmentData),
               );
             }
           });
@@ -328,53 +330,6 @@ export const markAssignmentCompleted = onRequest((req, res) => {
     } catch (error) {
       console.error("Error fetching assignments:", error);
       return res.status(500).send("Internal Server Error");
-    }
-  });
-});
-
-export const coachRemoveStudentFromClass = onRequest((req, res) => {
-  return handleCors(req, res, async (req, res) => {
-    try {
-      const userId = req.query.id;
-      if (!userId) {
-        return res.status(400).send("User ID is required");
-      }
-      const classId = req.query.classId;
-      if (!classId) {
-        return res.status(400).send("Class ID is required");
-      }
-
-      const userRef = db.collection("users").doc(userId);
-      const userSnapshot = await userRef.get();
-
-      if (!userSnapshot.exists) {
-        return res.status(404).send("User not found.");
-      }
-
-      const classes = userSnapshot.data().classes;
-
-      if (!classes.includes(classId)) {
-        return res.status(404).send("User is not enrolled in this class.");
-      }
-
-      const classRef = db.collection("classes").doc(classId);
-      const classSnapshot = await classRef.get();
-
-      if (!classSnapshot.exists) {
-        return res.status(404).send("Class not found.");
-      }
-
-      await userRef.update({
-        classes: FieldValue.arrayRemove(classId),
-      });
-      await classRef.update({
-        students: FieldValue.arrayRemove(userId),
-      });
-
-      res.status(200).send("Student removed from class successfully.");
-    } catch (error) {
-      console.error("Error removing student from class:", error);
-      res.status(500).send("Internal Server Error");
     }
   });
 });

@@ -130,47 +130,78 @@ const createRandomGame = (numHoles) => {
   };
 };
 
-export const createGame = onRequest((req, res) => {
-  return handleCors(req, res, async (req, res) => {
-    return withVerifiedId(req, res, async (req, res) => {
-      try {
-        const uid = req.user.uid;
-        const userRecord = await admin.auth().getUser(uid);
-        if (userRecord.customClaims.isCoach) {
-          res.status(403).json({ error: "Coaches cannot create games." });
-          return;
-        }
-
-        let gameData = null;
-        if (req.query.random18 && req.query.random18 === "true") {
-          gameData = createRandomGame(18);
-        } else if (req.query.random9 && req.query.random9 === "true") {
-          gameData = createRandomGame(9);
-        } else {
-          gameData = req.body;
-        }
-
-        if (validateGame(gameData)) {
-          res.status(400).json({ error: validateGame(gameData) });
-          return;
-        }
-
-        const gameRef = db.collection(`users/${uid}/games`).doc();
-        await gameRef.set({
-          ...gameData,
-        });
-        res.status(201).json({ message: "Game created successfully" });
-      } catch (error) {
-        console.error("Error creating game:", error.message);
-        res.status(500).json({ error: "Error creating game." });
+export const createGame = onRequest({ cors: true }, async (req, res) => {
+  return withVerifiedId(req, res, async (req, res) => {
+    try {
+      const uid = req.user.uid;
+      const userRecord = await admin.auth().getUser(uid);
+      if (userRecord.customClaims.isCoach) {
+        res.status(403).json({ error: "Coaches cannot create games." });
+        return;
       }
-    });
+
+      let gameData = null;
+      if (req.query.random18 && req.query.random18 === "true") {
+        gameData = createRandomGame(18);
+      } else if (req.query.random9 && req.query.random9 === "true") {
+        gameData = createRandomGame(9);
+      } else {
+        gameData = req.body;
+      }
+
+      if (validateGame(gameData)) {
+        res.status(400).json({ error: validateGame(gameData) });
+        return;
+      }
+
+      const gameRef = db.collection(`users/${uid}/games`).doc();
+      await gameRef.set({
+        ...gameData,
+      });
+      res.status(201).json({ message: "Game created successfully" });
+    } catch (error) {
+      console.error("Error creating game:", error.message);
+      res.status(500).json({ error: "Error creating game." });
+    }
   });
 });
 
-export const fetchGameStats = onRequest((req, res) => {
-  return handleCors(req, res, async (req, res) => {
-    return withVerifiedEmail(req, res, async (req, res) => {
+export const fetchGameStats = onRequest({ cors: true }, async (req, res) => {
+  return withVerifiedEmail(req, res, async (req, res) => {
+    const uid = req.user.uid;
+    const userRecord = await admin.auth().getUser(uid);
+    if (userRecord.customClaims.isCoach) {
+      res.status(403).json({ error: "Coaches cannot fetch games." });
+      return;
+    }
+
+    const mode = req.query.mode;
+    if (!mode) {
+      res.status(400).json({ error: "Missing mode parameter" });
+      return;
+    }
+
+    let games = [];
+
+    if (mode === "all") {
+      try {
+        const gamesSnapshot = await db.collection(`users/${uid}/games`).get();
+        games = gamesSnapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        res.status(200).json(games);
+      } catch (error) {
+        console.error("Error fetching games:", error.message);
+        res.status(500).json({ error: "Error fetching games" });
+      }
+    }
+  });
+});
+
+export const fetchGame = onRequest({ cors: true }, async (req, res) => {
+  return withVerifiedEmail(req, res, async (req, res) => {
+    try {
       const uid = req.user.uid;
       const userRecord = await admin.auth().getUser(uid);
       if (userRecord.customClaims.isCoach) {
@@ -178,137 +209,96 @@ export const fetchGameStats = onRequest((req, res) => {
         return;
       }
 
-      const mode = req.query.mode;
-      if (!mode) {
-        res.status(400).json({ error: "Missing mode parameter" });
+      const gameId = req.query.gameId;
+      if (!gameId) {
+        res.status(400).json({ error: "Missing gameId parameter" });
         return;
       }
 
-      let games = [];
-
-      if (mode === "all") {
-        try {
-          const gamesSnapshot = await db.collection(`users/${uid}/games`).get();
-          games = gamesSnapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-          }));
-          res.status(200).json(games);
-        } catch (error) {
-          console.error("Error fetching games:", error.message);
-          res.status(500).json({ error: "Error fetching games" });
-        }
+      const gameDoc = await db
+        .collection(`users/${uid}/games`)
+        .doc(gameId)
+        .get();
+      if (!gameDoc.exists) {
+        res.status(404).json({ error: "Game not found" });
+        return;
       }
-    });
+      res.status(200).json({ id: gameDoc.id, ...gameDoc.data() });
+    } catch (error) {
+      console.error("Error fetching game:", error.message);
+      res.status(500).json({ error: "Error fetching game." });
+    }
   });
 });
 
-export const fetchGame = onRequest((req, res) => {
-  return handleCors(req, res, async (req, res) => {
-    return withVerifiedEmail(req, res, async (req, res) => {
-      try {
-        const uid = req.user.uid;
-        const userRecord = await admin.auth().getUser(uid);
-        if (userRecord.customClaims.isCoach) {
-          res.status(403).json({ error: "Coaches cannot fetch games." });
-          return;
-        }
-
-        const gameId = req.query.gameId;
-        if (!gameId) {
-          res.status(400).json({ error: "Missing gameId parameter" });
-          return;
-        }
-
-        const gameDoc = await db
-          .collection(`users/${uid}/games`)
-          .doc(gameId)
-          .get();
-        if (!gameDoc.exists) {
-          res.status(404).json({ error: "Game not found" });
-          return;
-        }
-        res.status(200).json({ id: gameDoc.id, ...gameDoc.data() });
-      } catch (error) {
-        console.error("Error fetching game:", error.message);
-        res.status(500).json({ error: "Error fetching game." });
+export const deleteGame = onRequest({ cors: true }, async (req, res) => {
+  return withVerifiedEmail(req, res, async (req, res) => {
+    try {
+      const uid = req.user.uid;
+      const userRecord = await admin.auth().getUser(uid);
+      if (userRecord.customClaims.isCoach) {
+        res.status(403).json({ error: "Coaches cannot delete games." });
+        return;
       }
-    });
+      const gameId = req.query.gameId;
+      if (!gameId) {
+        res.status(400).json({ error: "Missing gameId parameter" });
+        return;
+      }
+
+      const gameDoc = await db
+        .collection(`users/${uid}/games`)
+        .doc(gameId)
+        .get();
+      if (!gameDoc.exists) {
+        res.status(404).json({ error: "Game not found" });
+        return;
+      }
+
+      await gameDoc.ref.delete();
+      res.status(200).json({ message: "Game deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting game:", error.message);
+      res.status(500).json({ error: "Error deleting game." });
+    }
   });
 });
 
-export const deleteGame = onRequest((req, res) => {
-  return handleCors(req, res, async (req, res) => {
-    return withVerifiedEmail(req, res, async (req, res) => {
-      try {
-        const uid = req.user.uid;
-        const userRecord = await admin.auth().getUser(uid);
-        if (userRecord.customClaims.isCoach) {
-          res.status(403).json({ error: "Coaches cannot delete games." });
-          return;
-        }
-        const gameId = req.query.gameId;
-        if (!gameId) {
-          res.status(400).json({ error: "Missing gameId parameter" });
-          return;
-        }
-
-        const gameDoc = await db
-          .collection(`users/${uid}/games`)
-          .doc(gameId)
-          .get();
-        if (!gameDoc.exists) {
-          res.status(404).json({ error: "Game not found" });
-          return;
-        }
-
-        await gameDoc.ref.delete();
-        res.status(200).json({ message: "Game deleted successfully" });
-      } catch (error) {
-        console.error("Error deleting game:", error.message);
-        res.status(500).json({ error: "Error deleting game." });
+export const updateGame = onRequest({ cors: true }, async (req, res) => {
+  return withVerifiedEmail(req, res, async (req, res) => {
+    try {
+      const uid = req.user.uid;
+      const userRecord = await admin.auth().getUser(uid);
+      if (userRecord.customClaims.isCoach) {
+        res.status(403).json({ error: "Coaches cannot update games." });
+        return;
       }
-    });
-  });
-});
 
-export const updateGame = onRequest((req, res) => {
-  return handleCors(req, res, async (req, res) => {
-    return withVerifiedEmail(req, res, async (req, res) => {
-      try {
-        const uid = req.user.uid;
-        const userRecord = await admin.auth().getUser(uid);
-        if (userRecord.customClaims.isCoach) {
-          res.status(403).json({ error: "Coaches cannot update games." });
-          return;
-        }
-
-        const gameId = req.query.gameId;
-        if (!gameId) {
-          res.status(400).json({ error: "Missing gameId parameter" });
-          return;
-        }
-
-        const gameDoc = await db
-          .collection(`users/${uid}/games`)
-          .doc(gameId)
-          .get();
-        if (!gameDoc.exists) {
-          res.status(404).json({ error: "Game not found" });
-          return;
-        }
-
-        const updatedData = req.body;
-        if (validateGame(updatedData)) {
-          res.status(400).json({ error: validateGame(updatedData) });
-          return;
-        }
-        await gameDoc.ref.update(updatedData);
-        res.status(200).json({ message: "Game updated successfully" });
-      } catch (error) {
-        console.error("Error updating game:", error.message);
-        res.status(500).json({ error: "Error updating game." });
+      const gameId = req.query.gameId;
+      if (!gameId) {
+        res.status(400).json({ error: "Missing gameId parameter" });
+        return;
       }
-    });
+
+      const gameDoc = await db
+        .collection(`users/${uid}/games`)
+        .doc(gameId)
+        .get();
+      if (!gameDoc.exists) {
+        res.status(404).json({ error: "Game not found" });
+        return;
+      }
+
+      const updatedData = req.body;
+      if (validateGame(updatedData)) {
+        res.status(400).json({ error: validateGame(updatedData) });
+        return;
+      }
+      await gameDoc.ref.update(updatedData);
+      res.status(200).json({ message: "Game updated successfully" });
+    } catch (error) {
+      console.error("Error updating game:", error.message);
+      res.status(500).json({ error: "Error updating game." });
+    }
   });
 });

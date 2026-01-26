@@ -7,132 +7,125 @@ function generateClassCode() {
   return code.toUpperCase();
 }
 
-export const createClass = onRequest((req, res) => {
-  return handleCors(req, res, async (req, res) => {
-    return withVerifiedEmail(req, res, async (req, res) => {
-      try {
-        const uid = req.user.uid;
-        const userRecord = await admin.auth().getUser(uid);
-        if (!userRecord.customClaims.isCoach) {
-          res.status(403).json({ error: "User is not a coach." });
-          return;
-        }
-        const className = req.body.className;
-        if (!className || className.trim() === "") {
-          res.status(400).json({ error: "Class name is required." });
-          return;
-        }
-
-        const classCode = generateClassCode();
-
-        let codeExists = true;
-        while (codeExists) {
-          const existing = await db
-            .collection("classes")
-            .where("code", "==", classCode)
-            .get();
-          if (existing.empty) {
-            codeExists = false;
-          } else {
-            classCode = generateClassCode();
-          }
-        }
-
-        const newClass = {
-          name: className.trim(),
-          id: classCode,
-          coach: uid,
-          createdAt: new Date().getTime() / 1000,
-          students: [],
-        };
-
-        await db.collection("classes").doc(classCode).set(newClass);
-
-        const coachRef = db.collection("coaches").doc(uid);
-        const coachDoc = await coachRef.get();
-        if (coachDoc.exists) {
-          const coachData = coachDoc.data();
-          const updatedClasses = Array.isArray(coachData.classes)
-            ? [...coachData.classes, classCode]
-            : [classCode];
-          await coachRef.update({ classes: updatedClasses });
-        } else {
-          console.log("Coach document does not exist:", uid);
-          res.status(404).json({ error: "Coach document not found." });
-          return;
-        }
-
-        res
-          .status(201)
-          .json({ message: "Class created successfully.", class: newClass });
-      } catch (error) {
-        console.error("Error creating class:", error.message);
-        res.status(500).json({ error: "Error creating class." });
+export const createClass = onRequest({ cors: true }, async (req, res) => {
+  return withVerifiedEmail(req, res, async (req, res) => {
+    try {
+      const uid = req.user.uid;
+      const userRecord = await admin.auth().getUser(uid);
+      if (!userRecord.customClaims.isCoach) {
+        res.status(403).json({ error: "User is not a coach." });
+        return;
       }
-    });
-  });
-});
+      const className = req.body.className;
+      if (!className || className.trim() === "") {
+        res.status(400).json({ error: "Class name is required." });
+        return;
+      }
 
-export const fetchCoachClasses = onRequest((req, res) => {
-  return handleCors(req, res, async (req, res) => {
-    return withVerifiedEmail(req, res, async (req, res) => {
-      try {
-        const uid = req.user.uid;
-        const userRecord = await admin.auth().getUser(uid);
-        if (!userRecord.customClaims.isCoach) {
-          res.status(403).json({ error: "User is not a coach." });
-          return;
-        }
+      const classCode = generateClassCode();
 
-        const classesSnapshot = await db
+      let codeExists = true;
+      while (codeExists) {
+        const existing = await db
           .collection("classes")
-          .where("coach", "==", uid)
+          .where("code", "==", classCode)
           .get();
-
-        const classes = classesSnapshot.docs.map((doc) => doc.data());
-        res.status(200).json({ classes });
-      } catch (error) {
-        console.error("Error fetching coach classes:", error.message);
-        res.status(500).json({ error: "Error fetching coach classes." });
+        if (existing.empty) {
+          codeExists = false;
+        } else {
+          classCode = generateClassCode();
+        }
       }
-    });
+
+      const newClass = {
+        name: className.trim(),
+        id: classCode,
+        coach: uid,
+        createdAt: new Date().getTime() / 1000,
+        students: [],
+      };
+
+      await db.collection("classes").doc(classCode).set(newClass);
+
+      const coachRef = db.collection("coaches").doc(uid);
+      const coachDoc = await coachRef.get();
+      if (coachDoc.exists) {
+        const coachData = coachDoc.data();
+        const updatedClasses = Array.isArray(coachData.classes)
+          ? [...coachData.classes, classCode]
+          : [classCode];
+        await coachRef.update({ classes: updatedClasses });
+      } else {
+        console.log("Coach document does not exist:", uid);
+        res.status(404).json({ error: "Coach document not found." });
+        return;
+      }
+
+      res
+        .status(201)
+        .json({ message: "Class created successfully.", class: newClass });
+    } catch (error) {
+      console.error("Error creating class:", error.message);
+      res.status(500).json({ error: "Error creating class." });
+    }
   });
 });
 
-export const deleteClass = onRequest((req, res) => {
-  return handleCors(req, res, async (req, res) => {
-    return withVerifiedEmail(req, res, async (req, res) => {
-      try {
-        const uid = req.user.uid;
-        const classCode = req.query.classCode;
-        if (!classCode || classCode.trim() === "") {
-          res.status(400).json({ error: "Class code is required." });
-          return;
-        }
-        const classDoc = await db.collection("classes").doc(classCode).get();
-        if (!classDoc.exists) {
-          res.status(404).json({ error: "Class not found." });
-          return;
-        }
-        const classData = classDoc.data();
-        if (classData.coach !== uid) {
-          res
-            .status(403)
-            .json({ error: "User is not the coach of this class." });
-          return;
-        }
-        await db.collection("classes").doc(classCode).delete();
-        res.status(200).json({ message: "Class deleted successfully." });
-      } catch (error) {
-        console.error("Error deleting class:", error.message);
-        res.status(500).json({ error: "Error deleting class." });
+export const fetchCoachClasses = onRequest({ cors: true }, async (req, res) => {
+  return withVerifiedEmail(req, res, async (req, res) => {
+    try {
+      const uid = req.user.uid;
+      const userRecord = await admin.auth().getUser(uid);
+      if (!userRecord.customClaims.isCoach) {
+        res.status(403).json({ error: "User is not a coach." });
+        return;
       }
-    });
+
+      const classesSnapshot = await db
+        .collection("classes")
+        .where("coach", "==", uid)
+        .get();
+
+      const classes = classesSnapshot.docs.map((doc) => doc.data());
+      res.status(200).json({ classes });
+    } catch (error) {
+      console.error("Error fetching coach classes:", error.message);
+      res.status(500).json({ error: "Error fetching coach classes." });
+    }
   });
 });
 
-export const createClassRequest = onRequest((req, res) => {
-  return handleCors(req, res, async (req, res) => {
+export const deleteClass = onRequest({ cors: true }, async (req, res) => {
+  return withVerifiedEmail(req, res, async (req, res) => {
+    try {
+      const uid = req.user.uid;
+      const classCode = req.query.classCode;
+      if (!classCode || classCode.trim() === "") {
+        res.status(400).json({ error: "Class code is required." });
+        return;
+      }
+      const classDoc = await db.collection("classes").doc(classCode).get();
+      if (!classDoc.exists) {
+        res.status(404).json({ error: "Class not found." });
+        return;
+      }
+      const classData = classDoc.data();
+      if (classData.coach !== uid) {
+        res.status(403).json({ error: "User is not the coach of this class." });
+        return;
+      }
+      await db.collection("classes").doc(classCode).delete();
+      res.status(200).json({ message: "Class deleted successfully." });
+    } catch (error) {
+      console.error("Error deleting class:", error.message);
+      res.status(500).json({ error: "Error deleting class." });
+    }
+  });
+});
+
+export const createClassRequest = onRequest(
+  { cors: true },
+  async (req, res) => {
     return withVerifiedEmail(req, res, async (req, res) => {
       try {
         const uid = req.user.uid;
@@ -192,18 +185,19 @@ export const createClassRequest = onRequest((req, res) => {
       } catch (error) {
         console.error(
           "Error processing class creation request:",
-          error.message
+          error.message,
         );
         res
           .status(500)
           .json({ error: "Error processing class creation request." });
       }
     });
-  });
-});
+  },
+);
 
-export const fetchPendingClassRequests = onRequest((req, res) => {
-  return handleCors(req, res, async (req, res) => {
+export const fetchPendingClassRequests = onRequest(
+  { cors: true },
+  async (req, res) => {
     return withVerifiedEmail(req, res, async (req, res) => {
       try {
         const uid = req.user.uid;
@@ -233,11 +227,11 @@ export const fetchPendingClassRequests = onRequest((req, res) => {
         res.status(500).json({ error: "Error fetching user class requests." });
       }
     });
-  });
-});
-
-export const deleteClassRequest = onRequest((req, res) => {
-  return handleCors(req, res, async (req, res) => {
+  },
+);
+export const deleteClassRequest = onRequest(
+  { cors: true },
+  async (req, res) => {
     return withVerifiedEmail(req, res, async (req, res) => {
       try {
         const uid = req.user.uid;
@@ -275,11 +269,12 @@ export const deleteClassRequest = onRequest((req, res) => {
         res.status(500).json({ error: "Error deleting class request." });
       }
     });
-  });
-});
+  },
+);
 
-export const coachFetchClassRequests = onRequest((req, res) => {
-  return handleCors(req, res, async (req, res) => {
+export const coachFetchClassRequests = onRequest(
+  { cors: true },
+  async (req, res) => {
     return withVerifiedEmail(req, res, async (req, res) => {
       try {
         const uid = req.user.uid;
@@ -326,58 +321,113 @@ export const coachFetchClassRequests = onRequest((req, res) => {
         res.status(500).json({ error: "Error fetching class requests." });
       }
     });
+  },
+);
+
+export const approveRequest = onRequest({ cors: true }, async (req, res) => {
+  return withVerifiedEmail(req, res, async (req, res) => {
+    try {
+      const uid = req.user.uid;
+      const userRecord = await admin.auth().getUser(uid);
+      if (!userRecord.customClaims.isCoach) {
+        res.status(403).json({ error: "User is not a coach." });
+        return;
+      }
+      const classCode = req.body.classCode;
+      const studentId = req.body.studentId;
+      if (!classCode || !studentId) {
+        res
+          .status(400)
+          .json({ error: "Class code and student ID are required." });
+        return;
+      }
+      const classRef = db.collection("classes").doc(classCode);
+      const classDoc = await classRef.get();
+      if (!classDoc.exists) {
+        res.status(404).json({ error: "Class not found." });
+        return;
+      }
+      if (classDoc.data().coach !== uid) {
+        res.status(403).json({ error: "User is not the coach of this class." });
+        return;
+      }
+      if (classDoc.data().students.includes(studentId)) {
+        res.status(400).json({ error: "Student is already in the class." });
+        return;
+      }
+      const requestRef = classRef.collection("requests").doc(studentId);
+      const requestDoc = await requestRef.get();
+      if (!requestDoc.exists) {
+        res.status(404).json({ error: "Class request not found." });
+        return;
+      }
+      await requestRef.delete();
+      await classRef.update({
+        students: admin.firestore.FieldValue.arrayUnion(studentId),
+      });
+      res.status(200).json({ message: "Student added to class." });
+    } catch (error) {
+      console.error("Error approving class request:", error.message);
+      res.status(500).json({ error: "Error approving class request." });
+    }
   });
 });
 
-export const approveRequest = onRequest((req, res) => {
-  return handleCors(req, res, async (req, res) => {
+export const coachRemoveStudentFromClass = onRequest(
+  { cors: true },
+  async (req, res) => {
     return withVerifiedEmail(req, res, async (req, res) => {
       try {
-        const uid = req.user.uid;
-        const userRecord = await admin.auth().getUser(uid);
-        if (!userRecord.customClaims.isCoach) {
-          res.status(403).json({ error: "User is not a coach." });
+        const userId = req.query.id;
+        if (!userId) {
+          res.status(400).json({ error: "User ID is required." });
           return;
         }
-        const classCode = req.body.classCode;
-        const studentId = req.body.studentId;
-        if (!classCode || !studentId) {
+        const classId = req.query.classId;
+        if (!classId) {
+          res.status(400).json({ error: "Class ID is required." });
+          return;
+        }
+
+        const userRef = db.collection("users").doc(userId);
+        const userSnapshot = await userRef.get();
+
+        if (!userSnapshot.exists) {
+          res.status(404).json({ error: "User not found." });
+          return;
+        }
+
+        const classes = userSnapshot.data().classes;
+
+        if (!classes.includes(classId)) {
           res
-            .status(400)
-            .json({ error: "Class code and student ID are required." });
+            .status(404)
+            .json({ error: "User is not enrolled in this class." });
           return;
         }
-        const classRef = db.collection("classes").doc(classCode);
-        const classDoc = await classRef.get();
-        if (!classDoc.exists) {
+
+        const classRef = db.collection("classes").doc(classId);
+        const classSnapshot = await classRef.get();
+
+        if (!classSnapshot.exists) {
           res.status(404).json({ error: "Class not found." });
           return;
         }
-        if (classDoc.data().coach !== uid) {
-          res
-            .status(403)
-            .json({ error: "User is not the coach of this class." });
-          return;
-        }
-        if (classDoc.data().students.includes(studentId)) {
-          res.status(400).json({ error: "Student is already in the class." });
-          return;
-        }
-        const requestRef = classRef.collection("requests").doc(studentId);
-        const requestDoc = await requestRef.get();
-        if (!requestDoc.exists) {
-          res.status(404).json({ error: "Class request not found." });
-          return;
-        }
-        await requestRef.delete();
-        await classRef.update({
-          students: admin.firestore.FieldValue.arrayUnion(studentId),
+
+        await userRef.update({
+          classes: admin.firestore.FieldValue.arrayRemove(classId),
         });
-        res.status(200).json({ message: "Student added to class." });
+        await classRef.update({
+          students: admin.firestore.FieldValue.arrayRemove(userId),
+        });
+
+        res
+          .status(200)
+          .json({ message: "Student removed from class successfully." });
       } catch (error) {
-        console.error("Error approving class request:", error.message);
-        res.status(500).json({ error: "Error approving class request." });
+        console.error("Error removing student from class:", error.message);
+        res.status(500).json({ error: "Error removing student from class." });
       }
     });
-  });
-});
+  },
+);
